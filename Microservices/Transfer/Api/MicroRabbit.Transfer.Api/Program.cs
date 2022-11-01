@@ -1,7 +1,9 @@
-using System.Reflection;
 using MediatR;
-using MicroRabbit.Banking.Data.Context;
+using MicroRabbit.Domain.Core.Bus;
 using MicroRabbit.Infra.IoC;
+using MicroRabbit.Transfer.Data.Context;
+using MicroRabbit.Transfer.Domain.EventHandlers;
+using MicroRabbit.Transfer.Domain.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
@@ -14,16 +16,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(configuration =>
 {
-    configuration.SwaggerDoc("v1", new OpenApiInfo { Title = "Banking Microservice", Version = "v1" });
+    configuration.SwaggerDoc("v1", new OpenApiInfo { Title = "Transfer Microservice", Version = "v1" });
 });
 
-builder.Services.AddDbContext<BankingDbContext>(options =>
+builder.Services.AddDbContext<TransferDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer"));
 });
-builder.Services.AddMediatR(typeof(Program).GetTypeInfo().Assembly);
 builder.Services.ConfigureServices();
-
+builder.Services.AddMediatR(typeof(Program));
 
 var app = builder.Build();
 
@@ -40,4 +41,13 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+ConfigureEventBus();
+
 app.Run();
+
+
+void ConfigureEventBus()
+{
+    var eventBus = app.Services.GetRequiredService<IEventBus>();
+    eventBus.Subscribe<TransferCreatedEvent, TransferEventHandler>();
+}
